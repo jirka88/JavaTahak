@@ -7,6 +7,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,6 +51,7 @@ public class MainFrame extends JFrame{
                 fileChooser.setFileFilter(filter);
                 int returnValue = fileChooser.showOpenDialog(null);
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    names.clear();
                     File selectedFile = fileChooser.getSelectedFile();
                     try {
                         sc = new Scanner(selectedFile);
@@ -75,6 +79,20 @@ public class MainFrame extends JFrame{
         topPanel.add(importSouboru);
         mainPanel.add(tableNames);
 
+        //čas
+        /*JLabel CurrentDateTime = new JLabel();
+        JLabel CurrentDateTime2 = new JLabel();
+        DateFormat dateandtime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Timer t = new Timer(1, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Date date = new Date();
+                CurrentDateTime.setText(dateandtime.format(date));
+                repaint();
+            }
+        });
+        t.start();
+        bottomPanel.add(CurrentDateTime);*/
         //Přidání jednotlivých prvků k MainFrame
         add(topPanel, BorderLayout.NORTH);
         add(leftPanel, BorderLayout.WEST);
