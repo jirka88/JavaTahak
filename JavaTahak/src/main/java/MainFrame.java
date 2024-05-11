@@ -3,6 +3,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import jsonClasses.Person;
 import tables.TableForNames;
+import tables.TableJsonPerson;
 import utils.SaveFile;
 
 import javax.swing.*;
@@ -25,6 +26,7 @@ public class MainFrame extends JFrame {
     private JButton exportSouboru;
     private JButton addNewRandomNumber;
     private JTable tableNames = new JTable();
+    private JTable jsonPersonTable = new JTable();
     private JList<String> list;
     private List<Person> data;
 
@@ -155,9 +157,12 @@ public class MainFrame extends JFrame {
                         throw new RuntimeException(ex);
                     }
                 }
+                jsonPersonTable.setModel(new TableJsonPerson(data));
             }
         });
         topPanel.add(importJson);
+        mainPanel.add(new JScrollPane(jsonPersonTable));
+
 
         //čas
         /*JLabel CurrentDateTime = new JLabel();
