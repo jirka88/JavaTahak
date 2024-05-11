@@ -1,3 +1,7 @@
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import jsonClasses.Person;
 import tables.TableForNames;
 import utils.SaveFile;
 
@@ -6,11 +10,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.lang.reflect.Type;
 import java.util.*;
+import java.util.List;
 
 public class MainFrame extends JFrame {
     private JPanel topPanel;
@@ -23,6 +26,7 @@ public class MainFrame extends JFrame {
     private JButton addNewRandomNumber;
     private JTable tableNames = new JTable();
     private JList<String> list;
+    private List<Person> data;
 
     private Scanner sc;
 
@@ -84,15 +88,15 @@ public class MainFrame extends JFrame {
         DefaultListModel<String> nahodneCisla = new DefaultListModel<>();
         int nahoda = new Random().nextInt(10) + 1;
 
-        for(int i = 0; i < nahoda; i++) {
+        for (int i = 0; i < nahoda; i++) {
             Random rd = new Random();
             nahodneCisla.addElement(Integer.toString(rd.nextInt(100) + 1));
         }
 
         list = new JList<>(nahodneCisla);
         JScrollPane listScroller = new JScrollPane(list);
-        listScroller.setPreferredSize(new Dimension(100,200));
-        mainPanel.add(listScroller);
+        listScroller.setPreferredSize(new Dimension(100, 200));
+        //mainPanel.add(listScroller);
 
         addNewRandomNumber = new JButton("Add Random Number");
         addNewRandomNumber.addActionListener(new ActionListener() {
@@ -101,7 +105,7 @@ public class MainFrame extends JFrame {
                 nahodneCisla.addElement(Integer.toString(rd.nextInt(100) + 1));
             }
         });
-        topPanel.add(addNewRandomNumber);
+        //topPanel.add(addNewRandomNumber);
 
         exportSouboru = new JButton("Export");
         exportSouboru.addActionListener(new ActionListener() {
@@ -115,8 +119,7 @@ public class MainFrame extends JFrame {
                     String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
                     if (!extension.equalsIgnoreCase("txt")) {
                         JOptionPane.showMessageDialog(null, "Špatný formát!");
-                    }
-                    else {
+                    } else {
                         try {
                             FileWriter myWriter = new FileWriter(fileToSave.getAbsolutePath());
                             SaveFile.saveAsTxt(myWriter, nahodneCisla);
@@ -130,8 +133,31 @@ public class MainFrame extends JFrame {
                 }
             }
         });
-        topPanel.add(exportSouboru);
+        //topPanel.add(exportSouboru);
 
+
+        //Načtení souboru JSON
+        JButton importJson = new JButton("Import do json");
+        importJson.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", "json");
+                fileChooser.setFileFilter(filter);
+                int returnValue = fileChooser.showOpenDialog(null);
+                if (returnValue == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = fileChooser.getSelectedFile();
+                    Gson gson = new Gson();
+                    java.lang.reflect.Type targetClassType = new TypeToken<List<Person>>() {
+                    }.getType();
+                    try {
+                        Reader reader = new FileReader(selectedFile);
+                        data = gson.fromJson(new JsonReader(reader), targetClassType);
+                    } catch (FileNotFoundException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }
+        });
+        topPanel.add(importJson);
 
         //čas
         /*JLabel CurrentDateTime = new JLabel();
