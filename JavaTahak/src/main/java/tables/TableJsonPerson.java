@@ -42,4 +42,31 @@ public class TableJsonPerson extends AbstractTableModel {
         }
         return null;
     }
+
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return true;
+    }
+
+    @Override
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        switch (columnIndex) {
+            case 0:
+                persons.get(rowIndex).setFirstName(aValue.toString());
+                break;
+            case 1:
+                persons.get(rowIndex).setLastName(aValue.toString());
+                break;
+            case 2:
+                persons.get(rowIndex).setCity(aValue.toString());
+                break;
+            case 3:
+                persons.get(rowIndex).setCountry(aValue.toString());
+                break;
+            case 4:
+                persons.get(rowIndex).setCountryCode(aValue.toString());
+                break;
+        }
+    }
+
 }

@@ -137,7 +137,6 @@ public class MainFrame extends JFrame {
         });
         //topPanel.add(exportSouboru);
 
-
         //Načtení souboru JSON
         JButton importJson = new JButton("Import do json");
         importJson.addActionListener(new ActionListener() {
@@ -162,7 +161,6 @@ public class MainFrame extends JFrame {
         });
         topPanel.add(importJson);
         mainPanel.add(new JScrollPane(jsonPersonTable));
-
 
         //čas
         /*JLabel CurrentDateTime = new JLabel();
