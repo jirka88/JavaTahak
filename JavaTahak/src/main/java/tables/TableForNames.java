@@ -7,6 +7,7 @@ import java.util.HashMap;
 public class TableForNames extends AbstractTableModel {
     private HashMap<String, Integer> names;
     private String[] namess;
+    private String[] columnNames = {"Jméno", "Počet"};
 
     public TableForNames(HashMap<String, Integer> names) {
         this.names = names;
@@ -32,6 +33,10 @@ public class TableForNames extends AbstractTableModel {
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return false;
+    }
+    @Override
+    public String getColumnName(int columnIndex) {
+        return columnNames[columnIndex];
     }
     //vrátí jména x počet nalezení
     @Override

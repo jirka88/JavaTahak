@@ -1,4 +1,5 @@
 import tables.TableForNames;
+import utils.SaveFile;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -7,23 +8,24 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Scanner;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.*;
 
-public class MainFrame extends JFrame{
+public class MainFrame extends JFrame {
     private JPanel topPanel;
     private JPanel leftPanel;
     private JPanel bottomPanel;
     private JPanel rightPanel;
     private JPanel mainPanel;
     private JButton importSouboru;
+    private JButton exportSouboru;
+    private JButton addNewRandomNumber;
     private JTable tableNames = new JTable();
+    private JList<String> list;
 
     private Scanner sc;
+
     public MainFrame() {
         //Základní nastavení okna
         setTitle("Název");
@@ -57,12 +59,11 @@ public class MainFrame extends JFrame{
                         sc = new Scanner(selectedFile);
                         while (sc.hasNextLine()) {
                             String name = sc.nextLine().toLowerCase();
-                            if(name.matches("^[\\p{L}]+$")) {
-                                if(names.containsKey(name)) {
+                            if (name.matches("^[\\p{L}]+$")) {
+                                if (names.containsKey(name)) {
                                     int frequency = names.get(name);
                                     names.put(name, ++frequency);
-                                }
-                                else {
+                                } else {
                                     names.put(name, 1);
                                 }
                             }
@@ -76,14 +77,67 @@ public class MainFrame extends JFrame{
                 tableNames.setModel(new TableForNames(names));
             }
         });
-        topPanel.add(importSouboru);
-        mainPanel.add(tableNames);
+        //topPanel.add(importSouboru);
+        //mainPanel.add(new JScrollPane(tableNames));
+
+        //Vygenerování náhodných čísel + JList + btn + export
+        DefaultListModel<String> nahodneCisla = new DefaultListModel<>();
+        int nahoda = new Random().nextInt(10) + 1;
+
+        for(int i = 0; i < nahoda; i++) {
+            Random rd = new Random();
+            nahodneCisla.addElement(Integer.toString(rd.nextInt(100) + 1));
+        }
+
+        list = new JList<>(nahodneCisla);
+        JScrollPane listScroller = new JScrollPane(list);
+        listScroller.setPreferredSize(new Dimension(100,200));
+        mainPanel.add(listScroller);
+
+        addNewRandomNumber = new JButton("Add Random Number");
+        addNewRandomNumber.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Random rd = new Random();
+                nahodneCisla.addElement(Integer.toString(rd.nextInt(100) + 1));
+            }
+        });
+        topPanel.add(addNewRandomNumber);
+
+        exportSouboru = new JButton("Export");
+        exportSouboru.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int userSelection = fileChooser.showSaveDialog(mainPanel);
+
+                if (userSelection == JFileChooser.APPROVE_OPTION) {
+                    File fileToSave = fileChooser.getSelectedFile();
+                    String fileName = fileToSave.getName();
+                    String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+                    if (!extension.equalsIgnoreCase("txt")) {
+                        JOptionPane.showMessageDialog(null, "Špatný formát!");
+                    }
+                    else {
+                        try {
+                            FileWriter myWriter = new FileWriter(fileToSave.getAbsolutePath());
+                            SaveFile.saveAsTxt(myWriter, nahodneCisla);
+                            myWriter.close();
+                            JOptionPane.showMessageDialog(null, "Uloženo!");
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
+
+                }
+            }
+        });
+        topPanel.add(exportSouboru);
+
 
         //čas
         /*JLabel CurrentDateTime = new JLabel();
         JLabel CurrentDateTime2 = new JLabel();
         DateFormat dateandtime = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        Timer t = new Timer(1, new ActionListener() {
+        Timer t = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 Date date = new Date();
