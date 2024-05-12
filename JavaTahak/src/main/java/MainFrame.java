@@ -2,19 +2,16 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import data.PersonList;
 import jsonClasses.Person;
 import tables.TableForNames;
 import tables.TableJsonPerson;
-import utils.SaveFile;
-
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.List;
 
@@ -31,8 +28,9 @@ public class MainFrame extends JFrame {
     private JTable jsonPersonTable = new JTable();
     private TableJsonPerson abstractModel;
     private JList<String> list;
-    private ArrayList<Person> data = new ArrayList<Person>();
-    private final String COUNT_RECORD_TEXT = "Počet záznamů činí: ";
+    private JLabel salarySum = new JLabel("Celkem platy: 0");
+    private JLabel countRecords = new JLabel("Počet záznamů činí: 0");
+    private PersonList data = new PersonList(salarySum, countRecords);
 
     private Scanner sc;
 
@@ -141,35 +139,62 @@ public class MainFrame extends JFrame {
         });*/
         //topPanel.add(exportSouboru);
 
-        //Načtení souboru JSON --> Řeší se zde tabulka s operacemi CRUD
-        JLabel countRecords = new JLabel("Počet záznamů činí: 0");
-        JLabel salarySum = new JLabel("Celkem platy: 0");
-        jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data));
-
-        JButton importJson = new JButton("Import do json");
-        importJson.addActionListener(new ActionListener() {
+        //Načtení souboru JSON nebo CSV --> Řeší se zde tabulka s operacemi CRUD
+        jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data.getData(), data));
+        JButton importJsonOrCsv = new JButton("Import");
+        importJsonOrCsv.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON", "json");
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON OR CSV", "json", "csv");
                 fileChooser.setFileFilter(filter);
                 int returnValue = fileChooser.showOpenDialog(null);
                 if (returnValue == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
-                    Gson gson = new Gson();
-                    java.lang.reflect.Type targetClassType = new TypeToken<List<Person>>() {
-                    }.getType();
-                    try {
-                        Reader reader = new FileReader(selectedFile);
-                        data = gson.fromJson(new JsonReader(reader), targetClassType);
-                    } catch (FileNotFoundException ex) {
-                        throw new RuntimeException(ex);
+                    String fileName = selectedFile.getName();
+                    String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+                    if (!extension.equalsIgnoreCase("csv") && !extension.equalsIgnoreCase("json")) {
+                        JOptionPane.showMessageDialog(null, "Špatný formát!");
+                        return;
+                    }
+                    if(extension.equalsIgnoreCase("json")) {
+                        Gson gson = new Gson();
+                        java.lang.reflect.Type targetClassType = new TypeToken<List<Person>>() {
+                        }.getType();
+                        try {
+                            Reader reader = new FileReader(selectedFile);
+                            data.setData(gson.fromJson(new JsonReader(reader), targetClassType));
+                        } catch (FileNotFoundException ex) {
+                            JOptionPane.showMessageDialog(null, "Nastala nečekaná chyba!");
+                            throw new RuntimeException(ex);
+                        }
+                    }
+                    else {
+                        try {
+                            String line = "";
+                            BufferedReader br = new BufferedReader(new FileReader(selectedFile));
+                            data.getData().clear();
+                            while ((line = br.readLine()) != null)
+                            {
+                                String[] rowData = line.split(";");
+                                try {
+                                    data.addPerson(new Person(rowData[0], rowData[1], rowData[2], rowData[3], rowData[4], Integer.parseInt(rowData[5])));
+                                }
+                                catch(NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(null, "Nastala nečekaná chyba!");
+                                }
+                            }
+                            br.close();
+                        } catch (IOException ex) {
+                            JOptionPane.showMessageDialog(null, "Nastala nečekaná chyba!");
+                            throw new RuntimeException(ex);
+                        }
                     }
                 }
-                jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data));
-                countRecords.setText(COUNT_RECORD_TEXT + data.size());
-                changeSum(salarySum);
+                jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data.getData(), data));
+                data.changeCount();
+                data.changeSum();
             }
         });
-        topPanel.add(importJson);
+        topPanel.add(importJsonOrCsv);
 
         JPanel tableWithForm = new JPanel();
         mainPanel.add(tableWithForm);
@@ -230,11 +255,11 @@ public class MainFrame extends JFrame {
                     throw new NumberFormatException();
                 }
                 if(!firstnameText.isBlank() && !lastnameText.isBlank() && !cityText.isBlank() && !countryText.isBlank() && !countryCodeText.isBlank()) {
-                    data.add(new Person(firstnameText, lastnameText, cityText, countryText, countryCodeText, salaryText));
+                    data.addPerson(new Person(firstnameText, lastnameText, cityText, countryText, countryCodeText, salaryText));
                     JOptionPane.showMessageDialog(null, "Údaj byl přidán!");
                     abstractModel.fireTableDataChanged();
-                    countRecords.setText(COUNT_RECORD_TEXT + data.size());
-                    changeSum(salarySum);
+                    data.changeCount();
+                    data.changeSum();
 
                     firstname.setText("");
                     lastname.setText("");
@@ -260,10 +285,10 @@ public class MainFrame extends JFrame {
                     return;
                 }
                 if(selectedRow != -1) {
-                    data.remove(selectedRow);
-                    changeSum(salarySum);
+                    data.removePerson(selectedRow);
+                    data.changeSum();
                     abstractModel.fireTableRowsDeleted(selectedRow, selectedRow);
-                    countRecords.setText(COUNT_RECORD_TEXT + data.size());
+                    data.changeCount();
                 }
                 else {
                     JOptionPane.showMessageDialog(null, "Nebyla vybrána hodnota!");
@@ -296,14 +321,14 @@ public class MainFrame extends JFrame {
                     try {
                         FileWriter myWriter = new FileWriter(fileToSave.getAbsolutePath());
                         if(extension.equalsIgnoreCase("txt")) {
-                            for (Person person : data) {
+                            for (Person person : data.getData()) {
                                 myWriter.write(person.getFirstName() + " " + person.getLastName() + " " + person.getCity() + " " + person.getCountry() + " " + person.getCountryCode() + " " + person.getSalary() + "\n");
                             }
                         }
                         else {
                             GsonBuilder gsonBuilder = new GsonBuilder();
                             Gson gson = gsonBuilder.create();
-                            myWriter.write(gson.toJson(data));
+                            myWriter.write(gson.toJson(data.getData()));
                         }
                         myWriter.close();
                         JOptionPane.showMessageDialog(null, "Uloženo!");
@@ -336,11 +361,5 @@ public class MainFrame extends JFrame {
         add(rightPanel, BorderLayout.EAST);
         add(mainPanel, BorderLayout.CENTER);
     }
-    public void changeSum(JLabel text) {
-        int sum = 0;
-        for(Person person : data) {
-            sum += person.getSalary();
-        }
-        text.setText("Celkem platy: " + sum);
-    }
+
 }

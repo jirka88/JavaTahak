@@ -1,5 +1,6 @@
 package tables;
 
+import data.PersonList;
 import jsonClasses.Person;
 
 import javax.swing.table.AbstractTableModel;
@@ -8,9 +9,11 @@ import java.util.List;
 
 public class TableJsonPerson extends AbstractTableModel {
     private final List<Person> persons;
+    private PersonList data;
     private final Field[] columnNames = Person.class.getDeclaredFields();
-    public TableJsonPerson(List<Person> persons) {
+    public TableJsonPerson(List<Person> persons, PersonList data) {
         this.persons = persons;
+        this.data = data;
     }
     @Override
     public int getRowCount() {
@@ -70,7 +73,9 @@ public class TableJsonPerson extends AbstractTableModel {
                 break;
             case 5:
                 persons.get(rowIndex).setSalary(Integer.parseInt(aValue.toString()));
+                data.changeSum();
                 break;
         }
+
     }
 }
