@@ -1,4 +1,5 @@
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import jsonClasses.Person;
@@ -8,6 +9,7 @@ import utils.SaveFile;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,8 +29,10 @@ public class MainFrame extends JFrame {
     private JButton addNewRandomNumber;
     private JTable tableNames = new JTable();
     private JTable jsonPersonTable = new JTable();
+    private TableJsonPerson abstractModel;
     private JList<String> list;
-    private List<Person> data;
+    private ArrayList<Person> data = new ArrayList<Person>();
+    private final String COUNT_RECORD_TEXT = "Počet záznamů činí: ";
 
     private Scanner sc;
 
@@ -53,7 +57,7 @@ public class MainFrame extends JFrame {
         JFileChooser fileChooser = new JFileChooser();
         HashMap<String, Integer> names = new HashMap<String, Integer>();
         importSouboru = new JButton("Import");
-        importSouboru.addActionListener(new ActionListener() {
+        /*importSouboru.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("TXT", "txt");
                 fileChooser.setFileFilter(filter);
@@ -82,7 +86,7 @@ public class MainFrame extends JFrame {
                 //tabulka pro jména
                 tableNames.setModel(new TableForNames(names));
             }
-        });
+        });*/
         //topPanel.add(importSouboru);
         //mainPanel.add(new JScrollPane(tableNames));
 
@@ -110,7 +114,7 @@ public class MainFrame extends JFrame {
         //topPanel.add(addNewRandomNumber);
 
         exportSouboru = new JButton("Export");
-        exportSouboru.addActionListener(new ActionListener() {
+        /*exportSouboru.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int userSelection = fileChooser.showSaveDialog(mainPanel);
@@ -134,10 +138,14 @@ public class MainFrame extends JFrame {
 
                 }
             }
-        });
+        });*/
         //topPanel.add(exportSouboru);
 
-        //Načtení souboru JSON
+        //Načtení souboru JSON --> Řeší se zde tabulka s operacemi CRUD
+        JLabel countRecords = new JLabel("Počet záznamů činí: 0");
+        JLabel salarySum = new JLabel("Celkem platy: 0");
+        jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data));
+
         JButton importJson = new JButton("Import do json");
         importJson.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -156,11 +164,156 @@ public class MainFrame extends JFrame {
                         throw new RuntimeException(ex);
                     }
                 }
-                jsonPersonTable.setModel(new TableJsonPerson(data));
+                jsonPersonTable.setModel(abstractModel = new TableJsonPerson(data));
+                countRecords.setText(COUNT_RECORD_TEXT + data.size());
+                changeSum(salarySum);
             }
         });
         topPanel.add(importJson);
-        mainPanel.add(new JScrollPane(jsonPersonTable));
+
+        JPanel tableWithForm = new JPanel();
+        mainPanel.add(tableWithForm);
+        tableWithForm.setLayout(new GridLayout(2,1));
+        tableWithForm.add(new JScrollPane(jsonPersonTable));
+
+        //vytvoření formuláře pro přidání prvků do tabulky
+        JLabel firstnameLbl = new JLabel("Jméno");
+        JTextField firstname = new JTextField(10);
+        JLabel lastnameLbl = new JLabel("Příjmení");
+        JTextField lastname = new JTextField(10);
+        JLabel cityLbl = new JLabel("Město");
+        JTextField city = new JTextField(10);
+        JLabel countryLbl = new JLabel("Stát");
+        JTextField country = new JTextField(10);
+        JLabel countryCodeLbl = new JLabel("Code");
+        JTextField countryCode = new JTextField(10);
+        JLabel salaryLbl = new JLabel("Plat");
+        JTextField salary = new JTextField(10);
+        salary.setText("0");
+        JButton submit = new JButton("vytvořit");
+        JPanel formular = new JPanel();
+        formular.setLayout(new GridLayout(16, 1));
+
+        tableWithForm.add(formular);
+
+        formular.add(countRecords);
+        formular.add(salarySum);
+
+        formular.add(firstnameLbl);
+        formular.add(firstname);
+        formular.add(lastnameLbl);
+        formular.add(lastname);
+        formular.add(cityLbl);
+        formular.add(city);
+        formular.add(countryLbl);
+        formular.add(country);
+        formular.add(countryCodeLbl);
+        formular.add(countryCode);
+        formular.add(salaryLbl);
+        formular.add(salary);
+        formular.add(submit);
+        //Přidání prvku do tabulky
+        submit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String firstnameText = firstname.getText();
+                String lastnameText = lastname.getText();
+                String cityText = city.getText();
+                String countryText = country.getText();
+                String countryCodeText = countryCode.getText();
+                int salaryText = 0;
+                try {
+                   salaryText = Integer.parseInt(salary.getText());
+                }
+                catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Zadejte číselný plat!");
+                    throw new NumberFormatException();
+                }
+                if(!firstnameText.isBlank() && !lastnameText.isBlank() && !cityText.isBlank() && !countryText.isBlank() && !countryCodeText.isBlank()) {
+                    data.add(new Person(firstnameText, lastnameText, cityText, countryText, countryCodeText, salaryText));
+                    JOptionPane.showMessageDialog(null, "Údaj byl přidán!");
+                    abstractModel.fireTableDataChanged();
+                    countRecords.setText(COUNT_RECORD_TEXT + data.size());
+                    changeSum(salarySum);
+
+                    firstname.setText("");
+                    lastname.setText("");
+                    city.setText("");
+                    country.setText("");
+                    countryCode.setText("");
+                    salary.setText("0");
+                }
+                else {
+                    JOptionPane.showMessageDialog(null, "Nevyplněn údaj!");
+                }
+            }
+        });
+
+        //vymazaní prvku z tabulky
+        JButton deleteRecord = new JButton("Vymaž záznam");
+        deleteRecord.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int selectedRow = jsonPersonTable.getSelectedRow();
+                if(jsonPersonTable.getColumnCount() == 0) {
+                    JOptionPane.showMessageDialog(null, "Tabulka je prázdná!");
+                    return;
+                }
+                if(selectedRow != -1) {
+                    data.remove(selectedRow);
+                    changeSum(salarySum);
+                    abstractModel.fireTableRowsDeleted(selectedRow, selectedRow);
+                    countRecords.setText(COUNT_RECORD_TEXT + data.size());
+                }
+                else {
+                    JOptionPane.showMessageDialog(null, "Nebyla vybrána hodnota!");
+                }
+            }
+        });
+        formular.add(deleteRecord);
+
+        //Export JSON a TXT z tabulky
+
+        JButton exportJsonBtn = new JButton("Export");
+
+        JFileChooser fileExport = new JFileChooser();
+        exportJsonBtn.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("TXT OR JSON", "txt", "json");
+                fileExport.setFileFilter(filter);
+                int userSelection = fileExport.showOpenDialog(null);
+                if (userSelection == JFileChooser.APPROVE_OPTION) {
+                    File fileToSave = fileExport.getSelectedFile();
+                    String fileName = fileToSave.getName();
+                    String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
+
+                    if (!extension.equalsIgnoreCase("txt") && !extension.equalsIgnoreCase("json")) {
+                        JOptionPane.showMessageDialog(null, "Špatný formát!");
+                        return;
+                    }
+                    try {
+                        FileWriter myWriter = new FileWriter(fileToSave.getAbsolutePath());
+                        if(extension.equalsIgnoreCase("txt")) {
+                            for (Person person : data) {
+                                myWriter.write(person.getFirstName() + " " + person.getLastName() + " " + person.getCity() + " " + person.getCountry() + " " + person.getCountryCode() + " " + person.getSalary() + "\n");
+                            }
+                        }
+                        else {
+                            GsonBuilder gsonBuilder = new GsonBuilder();
+                            Gson gson = gsonBuilder.create();
+                            myWriter.write(gson.toJson(data));
+                        }
+                        myWriter.close();
+                        JOptionPane.showMessageDialog(null, "Uloženo!");
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }
+        });
+        topPanel.add(exportJsonBtn);
 
         //čas
         /*JLabel CurrentDateTime = new JLabel();
@@ -182,5 +335,12 @@ public class MainFrame extends JFrame {
         add(bottomPanel, BorderLayout.SOUTH);
         add(rightPanel, BorderLayout.EAST);
         add(mainPanel, BorderLayout.CENTER);
+    }
+    public void changeSum(JLabel text) {
+        int sum = 0;
+        for(Person person : data) {
+            sum += person.getSalary();
+        }
+        text.setText("Celkem platy: " + sum);
     }
 }

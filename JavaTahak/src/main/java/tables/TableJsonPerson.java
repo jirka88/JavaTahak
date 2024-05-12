@@ -14,12 +14,12 @@ public class TableJsonPerson extends AbstractTableModel {
     }
     @Override
     public int getRowCount() {
-        return persons.size();
+            return persons.size() ;
     }
 
     @Override
     public int getColumnCount() {
-        return 5;
+        return 6;
     }
     @Override
     public String getColumnName(int columnIndex) {
@@ -39,6 +39,8 @@ public class TableJsonPerson extends AbstractTableModel {
                 return persons.get(rowIndex).getCountry();
             case 4:
                 return persons.get(rowIndex).getCountryCode();
+            case 5:
+                return persons.get(rowIndex).getSalary();
         }
         return null;
     }
@@ -66,7 +68,9 @@ public class TableJsonPerson extends AbstractTableModel {
             case 4:
                 persons.get(rowIndex).setCountryCode(aValue.toString());
                 break;
+            case 5:
+                persons.get(rowIndex).setSalary(Integer.parseInt(aValue.toString()));
+                break;
         }
     }
-
 }

@@ -13,13 +13,19 @@ public class Person {
     private String country;
     @SerializedName("countryCode")
     private String countryCode;
+    private int salary = 0;
 
-    public Person(String firstName, String lastName, String city, String country, String countryCode) {
+    public Person(String firstName, String lastName, String city, String country, String countryCode, int salary) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.city = city;
         this.country = country;
         this.countryCode = countryCode;
+        this.salary = salary;
+    }
+
+    public int getSalary() {
+        return salary;
     }
 
     public String getFirstName() {
@@ -60,5 +66,9 @@ public class Person {
 
     public void setCountryCode(String countryCode) {
         this.countryCode = countryCode;
+    }
+
+    public void setSalary(int salary) {
+        this.salary = salary;
     }
 }
